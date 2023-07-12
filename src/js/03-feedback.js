@@ -1,29 +1,55 @@
 import throttle from 'lodash.throttle';
 
-const formEl = document.querySelector('.feedback-form');
-let feedbackFormState = JSON.parse(
-  localStorage.getItem('feedback-form-state')
-) || { email: '', message: '' };
+const STORAGE_KEY = 'feedback-form-state';
 
-formEl.email.value = feedbackFormState.email;
-formEl.message.value = feedbackFormState.message;
-formEl.addEventListener(
-  'input',
-  throttle(event => {
-    feedbackFormState[event.target.name] = event.target.value;
-    localStorage.setItem(
-      'feedback-form-state',
-      JSON.stringify(feedbackFormState)
-    );
-  }, 500)
-);
+let formData = {};
 
-formEl.addEventListener('submit', event => {
-  event.preventDefault();
-  if (formEl.email.value === '' || formEl.message.value === '') {
-    return alert('Всі поля мають бути заповнені !');
-  }
-  console.log(feedbackFormState);
-  event.target.reset();
-  localStorage.removeItem('feedback-form-state');
-});
+const refs = {
+    form: document.querySelector('.feedback-form'),
+    input: document.querySelector('.feedback-form  input'),
+    textarea: document.querySelector('.feedback-form textarea'),
+};
+
+refs.form.addEventListener('input', throttle(onInputTextarea, 500));
+refs.form.addEventListener('submit', onFormSubmit);
+
+initInputTextarea();
+
+function onInputTextarea(event) {
+    formData = {
+        email: refs.input.value.trim(),
+        message: refs.textarea.value.trim(),
+    };
+
+
+    const formDataJSON = JSON.stringify(formData);
+
+    localStorage.setItem(STORAGE_KEY, formDataJSON);
+
+};
+
+function onFormSubmit(event) {
+    event.preventDefault();
+
+   const { email, message } = event.currentTarget.elements;
+   console.log({ email: email.value.trim(), message: message.value.trim() });
+
+    event.currentTarget.reset();
+    formData = {};
+
+    localStorage.removeItem(STORAGE_KEY);
+};
+
+function initInputTextarea() {
+    try {
+    const savedData = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(savedData) {
+    refs.input.value = savedData.email;
+    refs.textarea.value = savedData.message;
+
+    };
+    } catch (error) {
+        return;
+    }
+};
+
